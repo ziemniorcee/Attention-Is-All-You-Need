@@ -2,6 +2,7 @@ experiment:
   name: reverse_heads_sweep
   seeds: [13, 37, 71]
   output_dir: artifacts
+  results_file: results/raw_runs.csv
 
 data:
   task: reverse
@@ -13,6 +14,7 @@ data:
   generalization_length: [21, 40]
 
 model:
+  types: [lstm, transformer]
   d_model: 128
   num_layers: 2
   num_heads: [1, 2, 4, 8]
@@ -23,5 +25,7 @@ training:
   batch_size: 64
   epochs: 20
   learning_rate: 0.001
+  weight_decay: 0.0001
+  gradient_clip: 1.0
+  early_stopping_patience: 5
   device: auto
-

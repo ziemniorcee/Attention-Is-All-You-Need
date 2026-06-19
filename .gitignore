@@ -1,5 +1,6 @@
 __pycache__/
 *.py[cod]
+*.egg-info/
 .pytest_cache/
 .venv/
 
@@ -12,4 +13,3 @@ artifacts/
 .vscode/
 .DS_Store
 Thumbs.db
-
