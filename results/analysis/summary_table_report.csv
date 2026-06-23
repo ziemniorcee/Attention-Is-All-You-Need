@@ -1,0 +1,6 @@
+Configuration,Seeds,Parameters,Test token acc.,Test sequence acc.,Generalization token acc.,Generalization sequence acc.,Training time
+LSTM,3,"540,704",81.3 +/- 1.9%,52.4 +/- 3.6%,25.3 +/- 1.0%,0.0 +/- 0.0%,340.8 +/- 9.2
+Transformer (1 head),3,"675,360",57.5 +/- 0.9%,31.6 +/- 3.6%,6.1 +/- 0.4%,0.0 +/- 0.0%,629.1 +/- 24.9
+Transformer (2 heads),3,"675,360",68.2 +/- 5.3%,41.5 +/- 7.0%,6.5 +/- 0.6%,0.0 +/- 0.0%,723.1 +/- 62.0
+Transformer (4 heads),3,"675,360",70.5 +/- 2.6%,43.5 +/- 4.8%,6.8 +/- 0.1%,0.0 +/- 0.0%,679.0 +/- 32.7
+Transformer (8 heads),3,"675,360",78.3 +/- 1.6%,48.0 +/- 5.2%,7.9 +/- 0.1%,0.0 +/- 0.0%,716.5 +/- 15.7

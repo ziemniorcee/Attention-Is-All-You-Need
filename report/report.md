@@ -157,10 +157,75 @@ the multi-seed sweep and adopted the encoder–decoder protocol above.
 
 ## 4. Results
 
+Wyniki końcowe zostały obliczone na podstawie trzech niezależnych seedów dla każdej konfiguracji modelu. W tabeli pokazano średnią oraz odchylenie standardowe. Porównanie obejmuje model bazowy LSTM oraz cztery warianty Transformera z 1, 2, 4 i 8 głowami uwagi.
+
+| Konfiguracja | Seedy | Parametry | Dokładność tokenów test | Dokładność sekwencji test | Dokładność tokenów generalizacja | Dokładność sekwencji generalizacja |
+| --- | --- | --- | --- | --- | --- | --- |
+| LSTM | 3 | 540,704 | 81.3 +/- 1.9% | 52.4 +/- 3.6% | 25.3 +/- 1.0% | 0.0 +/- 0.0% |
+| Transformer (1 head) | 3 | 675,360 | 57.5 +/- 0.9% | 31.6 +/- 3.6% | 6.1 +/- 0.4% | 0.0 +/- 0.0% |
+| Transformer (2 heads) | 3 | 675,360 | 68.2 +/- 5.3% | 41.5 +/- 7.0% | 6.5 +/- 0.6% | 0.0 +/- 0.0% |
+| Transformer (4 heads) | 3 | 675,360 | 70.5 +/- 2.6% | 43.5 +/- 4.8% | 6.8 +/- 0.1% | 0.0 +/- 0.0% |
+| Transformer (8 heads) | 3 | 675,360 | 78.3 +/- 1.6% | 48.0 +/- 5.2% | 7.9 +/- 0.1% | 0.0 +/- 0.0% |
+
+![Test accuracy by model configuration](../results/analysis/test_accuracy_by_config.png)
+
+*Figure 1. Test token accuracy and exact-sequence accuracy for the LSTM baseline and Transformer variants.*
+
+Najlepszym wariantem Transformera okazał się model z 8 głowami uwagi. Osiągnął on 78.3% dokładności tokenów oraz 48.0% dokładności całych sekwencji na zbiorze testowym. Mimo to najlepszy ogólny wynik uzyskał baseline LSTM, który osiągnął 81.3% dokładności tokenów oraz 52.4% dokładności całych sekwencji.
+
+Wynik ten pokazuje, że Transformer wyraźnie korzystał ze zwiększenia liczby głów uwagi, ale w tym uproszczonym zadaniu odwracania sekwencji nie przebił modelu rekurencyjnego. Zbiór generalizacyjny z dłuższymi sekwencjami był trudny dla wszystkich modeli. Dokładność całych sekwencji wyniosła tam 0.0% dla każdej konfiguracji, co sugeruje, że modele nauczyły się głównie rozkładu długości z treningu, a nie w pełni ogólnego algorytmu odwracania sekwencji.
+
 ## 5. Ablation: number of attention heads
+
+Ablacja liczby głów uwagi sprawdza, czy podział reprezentacji na więcej głów poprawia działanie Transformera przy tej samej liczbie parametrów. Wszystkie warianty Transformera miały tę samą szerokość modelu `d_model = 128`, tę samą liczbę warstw i tę samą liczbę parametrów równą 675,360. Różniły się wyłącznie liczbą głów uwagi.
+
+| Liczba głów | Dokładność tokenów test | Dokładność sekwencji test | Dokładność tokenów generalizacja | Dokładność sekwencji generalizacja |
+| --- | --- | --- | --- | --- |
+| 1 | 57.5 +/- 0.9% | 31.6 +/- 3.6% | 6.1 +/- 0.4% | 0.0 +/- 0.0% |
+| 2 | 68.2 +/- 5.3% | 41.5 +/- 7.0% | 6.5 +/- 0.6% | 0.0 +/- 0.0% |
+| 4 | 70.5 +/- 2.6% | 43.5 +/- 4.8% | 6.8 +/- 0.1% | 0.0 +/- 0.0% |
+| 8 | 78.3 +/- 1.6% | 48.0 +/- 5.2% | 7.9 +/- 0.1% | 0.0 +/- 0.0% |
+
+![Transformer ablation: test token accuracy](../results/analysis/heads_ablation_test_token_accuracy.png)
+
+*Figure 2. Effect of the number of attention heads on Transformer test token accuracy.*
+
+![Transformer ablation: test sequence accuracy](../results/analysis/heads_ablation_test_sequence_accuracy.png)
+
+*Figure 3. Effect of the number of attention heads on Transformer exact-sequence accuracy.*
+
+Największa poprawa wystąpiła po przejściu z jednej głowy do dwóch głów uwagi. Dokładność tokenów wzrosła wtedy z 57.5% do 68.2%, a dokładność całych sekwencji z 31.6% do 41.5%. Kolejne zwiększanie liczby głów nadal poprawiało wynik, ale zmiana z 2 do 4 głów była już mniejsza niż zmiana z 1 do 2 głów.
+
+Najlepszy wynik wśród Transformerów uzyskała konfiguracja z 8 głowami. W porównaniu z wariantem jednogłowicowym poprawiła dokładność tokenów na zbiorze testowym o 20.8 punktu procentowego oraz dokładność całych sekwencji o 16.4 punktu procentowego. Ponieważ liczba parametrów była taka sama we wszystkich wariantach, wynik ten wspiera hipotezę, że wiele głów uwagi może lepiej rozdzielać różne zależności w sekwencji niż pojedyncza głowa o większym wymiarze.
+
+Jednocześnie ablacja nie pokazuje pełnej generalizacji algorytmicznej. Na dłuższych sekwencjach wszystkie warianty miały 0.0% dokładności całych sekwencji. Oznacza to, że większa liczba głów poprawiła jakość predykcji w rozkładzie testowym podobnym do treningowego, ale nie wystarczyła do nauczenia modelu niezależnego od długości algorytmu odwracania sekwencji.
 
 ## 6. Limitations and reproducibility notes
 
+Najważniejszym ograniczeniem eksperymentu jest skala reprodukcji. Oryginalny artykuł Vaswani et al. (2017) dotyczył tłumaczenia maszynowego na dużych zbiorach danych i raportował wynik BLEU. W naszym projekcie nie odtwarzamy pełnego eksperymentu WMT, tylko jego uproszczony odpowiednik: syntetyczne zadanie odwracania sekwencji. Dzięki temu eksperyment da się uruchomić lokalnie na laptopie, ale wyniki nie powinny być interpretowane jako bezpośrednie porównanie jakości tłumaczenia.
+
+Drugim ograniczeniem jest rozmiar modeli. Używany Transformer jest znacznie mniejszy od modelu z oryginalnego artykułu: ma 2 warstwy, `d_model = 128` i około 675 tysięcy parametrów. Ograniczony budżet obliczeniowy wpływa również na liczbę epok, liczbę seedów i zakres przeszukiwanych hiperparametrów. Z tego powodu wyniki pokazują raczej trend w małej kontrolowanej konfiguracji, a nie pełną przewagę jednej architektury nad drugą.
+
+Ważnym wynikiem negatywnym jest słaba generalizacja na dłuższe sekwencje. Wszystkie modele uzyskały 0.0% dokładności całych sekwencji na zbiorze z długościami 21-40, mimo że na zbiorze testowym o długościach znanych z treningu osiągały znacznie lepsze wyniki. Oznacza to, że modele nauczyły się zachowania przy długościach treningowych, ale nie w pełni ogólnego algorytmu odwracania sekwencji.
+
+![Generalization to longer sequences](../results/analysis/generalization_accuracy_by_config.png)
+
+*Figure 4. Generalization performance on longer sequences outside the training length range.*
+
+Reprodukowalność projektu opiera się na zapisanych seedach, konfiguracji eksperymentu i surowych wynikach w `results/raw_runs.csv`. Skrypt `src/tiny_transformer/analysis.py` generuje końcowe tabele i wykresy do folderu `results/analysis/`. Dzięki temu część analityczna nie wymaga ponownego trenowania modeli: można odtworzyć średnie, odchylenia standardowe i wykresy bez uruchamiania kosztownego sweepu treningowego.
+
+Do pełnego odtworzenia wyników treningowych potrzebne jest uruchomienie eksperymentów dla trzech seedów oraz wszystkich konfiguracji modeli. Jest to możliwe z użyciem konfiguracji projektu, ale czasochłonne na CPU. Dlatego w repozytorium przechowywane są surowe wyniki końcowe, a analiza końcowa została oddzielona od samego treningu.
+
 ## 7. Conclusions
 
+Projekt pozwolił odtworzyć w małej skali jedną z głównych obserwacji z pracy Vaswani et al. (2017): multi-head attention może być skuteczniejszy niż single-head attention przy tej samej liczbie parametrów. W naszych eksperymentach Transformer z 8 głowami osiągnął najlepszy wynik spośród wariantów Transformera, a model z jedną głową był wyraźnie najsłabszy.
+
+Jednocześnie eksperyment nie potwierdził przewagi Transformera nad baseline'em LSTM w tej konkretnej konfiguracji. LSTM uzyskał najlepszy wynik testowy zarówno dla dokładności tokenów, jak i dla dokładności całych sekwencji. Najbardziej prawdopodobnym wyjaśnieniem jest to, że zadanie odwracania krótkich sekwencji jest dobrze dopasowane do modelu rekurencyjnego, a użyty Transformer był bardzo mały względem oryginalnej architektury.
+
+Największym ograniczeniem pozostała generalizacja na dłuższe sekwencje. Żaden model nie osiągnął niezerowej dokładności całych sekwencji na przykładach dłuższych niż te widziane podczas treningu. Pokazuje to, że dobre wyniki w rozkładzie testowym nie muszą oznaczać nauczenia ogólnego algorytmu.
+
+Podsumowując, projekt skutecznie pokazuje mechanikę i sens ablacji liczby głów uwagi, ale nie jest pełną reprodukcją wyników tłumaczeniowych z oryginalnego artykułu. Najważniejszy wniosek praktyczny jest taki, że zwiększenie liczby głów poprawiło działanie Transformera w tym eksperymencie, jednak architektura LSTM pozostała mocnym baseline'em dla prostego zadania sekwencyjnego.
+
 ## References
+
+Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, Ł., & Polosukhin, I. (2017). Attention is all you need. Advances in Neural Information Processing Systems, 30.
