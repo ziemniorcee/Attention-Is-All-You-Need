@@ -108,52 +108,17 @@ Stałość liczby parametrów jest weryfikowana testem jednostkowym `test_parame
 
 ## 3. Experimental setup
 
-We use a deterministic synthetic sequence-reversal task. Input tokens are sampled
-uniformly from a vocabulary of 29 data symbols; token 0 is reserved for padding,
-token 1 begins decoder input (`BOS`), and token 2 is an explicit end-of-sequence
-marker (`EOS`). The marker makes the
-length observable when examples of different lengths share a padded batch. The
-training set contains 10,000 sequences, while the validation and in-distribution
-test sets contain 1,000 sequences each. Their lengths are sampled uniformly from
-5 to 20 tokens. A separate 1,000-example test set contains lengths 21–40 and is
-used only to measure out-of-distribution length generalization. The four splits
-are generated from independent, recorded pseudorandom seeds.
+Używamy deterministycznego, syntetycznego zadania odwracania sekwencji. Tokeny wejściowe są losowane jednostajnie ze słownika zawierającego 29 symboli danych; token 0 jest zarezerwowany dla paddingu, token 1 rozpoczyna wejście dekodera (`BOS`), a token 2 oznacza koniec sekwencji (`EOS`). Znacznik końca sekwencji sprawia, że długość przykładu jest jawna, nawet gdy sekwencje o różnych długościach znajdują się w jednym batchu z paddingiem. Zbiór treningowy zawiera 10 000 sekwencji, natomiast zbiory walidacyjny i testowy zgodny z rozkładem treningowym zawierają po 1 000 sekwencji. Ich długości są losowane jednostajnie z zakresu od 5 do 20 tokenów. Osobny zbiór testowy z 1 000 przykładów zawiera sekwencje o długościach 21-40 i służy wyłącznie do oceny generalizacji poza rozkład długości widziany podczas treningu. Wszystkie cztery podziały danych są generowane z niezależnych, zapisanych seedów pseudolosowych.
 
-The primary model is a two-layer encoder–decoder Transformer with sinusoidal
-positional encoding, model width 128, feed-forward width 256, ReLU activation,
-and dropout 0.1. A two-layer encoder–decoder LSTM with the same embedding and
-hidden width is used as a baseline. Both models use teacher forcing during
-training and greedy autoregressive decoding during evaluation. For the ablation,
-the Transformer uses 1, 2, 4, or 8 heads
-while keeping `d_model=128`; therefore the projection parameter count is fixed
-and only the per-head width changes.
+Głównym modelem jest dwuwarstwowy Transformer w architekturze enkoder-dekoder, z sinusoidalnym kodowaniem pozycyjnym, szerokością modelu 128, szerokością warstwy feed-forward 256, aktywacją ReLU oraz dropoutem 0.1. Jako baseline używamy dwuwarstwowego modelu LSTM w architekturze enkoder-dekoder, z tą samą szerokością embeddingów i stanów ukrytych. Oba modele podczas treningu korzystają z teacher forcing, a podczas ewaluacji z zachłannego dekodowania autoregresyjnego. W ramach ablacji Transformer używa 1, 2, 4 albo 8 głów uwagi przy zachowaniu `d_model=128`; dzięki temu liczba parametrów projekcji pozostaje stała, a zmienia się jedynie wymiar przypadający na pojedynczą głowę.
 
-Models are trained with AdamW, learning rate 0.001, weight decay 0.0001, batch
-size 64, cross-entropy loss ignoring padding, and gradient norm clipping at 1.0.
-Training lasts at most 20 epochs and stops after five epochs without improvement
-in teacher-forced validation loss. Autoregressive decoding is deliberately
-reserved for the final validation and test passes to keep the sweep feasible.
-Final configurations are run with seeds 13, 37, and 71. We report token accuracy, exact-sequence accuracy,
-trainable parameter count, and wall-clock training time. Raw per-epoch histories,
-checkpoints, configuration, software versions, and hardware metadata are saved
-under `artifacts/`.
+Modele są trenowane z użyciem optymalizatora AdamW, learning rate 0.001, weight decay 0.0001, batch size 64, funkcji straty cross-entropy ignorującej padding oraz przycinania normy gradientu do 1.0. Trening trwa maksymalnie 20 epok i zatrzymuje się po pięciu epokach bez poprawy teacher-forced validation loss. Dekodowanie autoregresyjne jest celowo wykonywane dopiero podczas końcowej walidacji i testowania, aby cały przegląd konfiguracji pozostał wykonalny czasowo. Końcowe konfiguracje są uruchamiane dla seedów 13, 37 i 71. Raportujemy dokładność tokenów, dokładność całych sekwencji, liczbę trenowalnych parametrów oraz rzeczywisty czas treningu. Surowe historie epok, checkpointy, konfiguracja, wersje oprogramowania oraz metadane sprzętowe są zapisywane w folderze `artifacts/`.
 
-The final sweep was executed on Windows 11 using Python 3.12.13 and CPU-only
-PyTorch 2.12.1 on 16 logical CPU threads. Individual LSTM runs took about
-5.7 minutes on average, while Transformer runs took approximately 10.5–12.1
-minutes on average depending on head count; the longest run remained well below
-the four-hour hardware constraint.
+Końcowy sweep został wykonany na Windows 11 z użyciem Pythona 3.12.13 oraz PyTorch 2.12.1 działającego wyłącznie na CPU, na 16 logicznych wątkach procesora. Pojedyncze uruchomienia LSTM trwały średnio około 5.7 minuty, natomiast uruchomienia Transformera zajmowały średnio około 10.5-12.1 minuty, zależnie od liczby głów. Najdłuższe uruchomienie pozostało wyraźnie poniżej czterogodzinnego limitu wynikającego z ograniczeń sprzętowych.
 
-These settings are a deliberate laptop-scale deviation from Vaswani et al.
-(2017): the original WMT translation datasets and base/large models are replaced
-by a controlled algorithmic task and a tiny model. The head-count ablation keeps
-the central comparison of differently partitioned attention representations,
-but its absolute results should not be interpreted as translation quality.
+Te ustawienia są celowym, laptopowym uproszczeniem eksperymentu z pracy Vaswani et al. (2017): oryginalne zbiory tłumaczeniowe WMT oraz modele base/large zostały zastąpione kontrolowanym zadaniem algorytmicznym i małym modelem. Ablacja liczby głów zachowuje centralne porównanie różnych sposobów podziału reprezentacji uwagi, ale wartości bezwzględne wyników nie powinny być interpretowane jako jakość tłumaczenia maszynowego.
 
-During protocol development we piloted a simpler encoder-only token classifier.
-It plateaued at approximately 23% token accuracy and 0% exact-sequence accuracy,
-even after adding an explicit `EOS` token. We rejected that simplification before
-the multi-seed sweep and adopted the encoder–decoder protocol above.
+Podczas opracowywania protokołu testowaliśmy prostszy klasyfikator tokenów oparty wyłącznie na enkoderze. Model zatrzymywał się na około 23% dokładności tokenów i 0% dokładności całych sekwencji, nawet po dodaniu jawnego tokenu `EOS`. Odrzuciliśmy to uproszczenie przed uruchomieniem końcowego eksperymentu z wieloma seedami i przyjęliśmy opisany wyżej protokół enkoder-dekoder.
 
 ## 4. Results
 
