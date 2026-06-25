@@ -102,6 +102,26 @@ generalization_accuracy_by_config.png
 training_time_by_config.png
 ```
 
+## Interactive terminal demo
+
+To type your own token sequence and compare answers from the LSTM baseline and
+Transformers with 1, 2, 4, and 8 attention heads, run:
+
+```bash
+python -m tiny_transformer.demo --config configs/base.yaml --seed 13
+```
+
+Then enter numbers from `3` to `31`, for example:
+
+```text
+3 7 9 12
+```
+
+The demo looks for trained checkpoints in the normal training layout, such as
+`artifacts/lstm_heads-na_seed-13/best.pt` and
+`artifacts/transformer_heads-8_seed-13/best.pt`. If checkpoints are missing, it
+still runs and labels those model answers as untrained.
+
 ## Re-run the full experiment
 
 To run or resume the full training sweep, use:
